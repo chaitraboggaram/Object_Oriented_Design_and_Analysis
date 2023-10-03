@@ -1,7 +1,10 @@
-**Classes**
+# Object Oriented Design and Analysis Syntaxes
+
+## Classes
+
+**Class and object declaration**
 
 ```
-Class declaration
 class className {
     public: 
     datatype1 variableName1;
