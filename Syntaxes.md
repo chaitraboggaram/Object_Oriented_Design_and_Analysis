@@ -2,7 +2,7 @@
 
 ## Classes
 
-**Class and object declaration**
+### Class and object declaration**
 
 ```
 class className {
@@ -57,7 +57,7 @@ Pear
 
 ## Pointers
 
-**Pointer initilization**
+### Pointer initilization
 ```
 datatype1 *pointerName;
 datatype2 varibaleName;
@@ -83,15 +83,10 @@ cout << newvar << endl << endl;
 25
 ```
 
-**Pointer Reference**
+### Pointer Reference
 - Incrementing reference or variable will increment both
 
-```
-datatype1 variableName1;
-datatype1 &variableName2 = variable1;
-```
-
-**Output**
+**Example**
 ```
 int i = 25;
 int &ir = i;
@@ -100,3 +95,41 @@ ir = ir + 1;
 cout << ir << endl;
 cout << i << endl;
 ```
+
+**Output**
+```
+26
+26
+```
+
+### Updating values with pointers
+
+**Example**
+```
+int firstvalue, secondvalue;
+int *mypointer;
+mypointer = &firstvalue;
+*mypointer = 10;
+mypointer = &secondvalue;
+*mypointer = 20;
+cout << "firstvalue is " << firstvalue << '\n';
+cout << mypointer << endl;
+cout << "secondvalue is " << secondvalue << '\n';
+cout << mypointer << endl;
+```
+
+**Output**
+```
+firstvalue is 10
+secondvalue is 20
+```
+
+### Incrementing pointers
+**Example**
+```
+
+```
+**Output**
+
+
+### Decrementing pointers
