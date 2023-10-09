@@ -3,6 +3,7 @@
 #include <string>
 #include <cstdlib>
 #include <ctime>
+#include <regex>
 
 using namespace std;
 
@@ -14,15 +15,16 @@ struct Product {
     int availableQuantity;
 };
 
-// Function to simulate payment processing with a chance of failure
-bool processPayment() {
-    // Simulate a 10% chance of payment failure
-    return rand() % 10 != 0;
+bool isAlphaWithSpace(const string &str) {
+    for (char ch : str) {
+        if (!isalpha(ch) && ch != ' ') {
+            return false;
+        }
+    }
+    return true;
 }
 
 int main() {
-    srand(time(0)); // Seed for random number generation
-
     // Create a list of products
     vector<Product> inventory = {
         {1, "Apples", 1.89, 50},
@@ -34,16 +36,6 @@ int main() {
     // Initialize the shopping cart
     vector<pair<Product, int>> cart;
 
-    srand(static_cast<unsigned int>(time(nullptr)));
-
-    // Generate a random number between 0 and 9
-    int randomValue = rand() % 10;
-
-    // Check if the random number is less than 1 (10% chance)
-    if (randomValue < 1) {
-        cout << "Failure occurred!" << endl;
-        // Add code here to handle the failure
-    } else {
     int cartSize = 0;
     while (true) {
         cout << endl << "Available Products:" << endl;
@@ -98,19 +90,117 @@ int main() {
             cin >> paymentChoice;
 
             if (paymentChoice == 1) {
-                // Simulate payment processing
-                if (processPayment()) {
+                srand(static_cast<unsigned int>(time(nullptr)));
+
+                // Generate a random number between 0 and 9
+                int randomValue = rand() % 10;
+
+                // Collecting credit card details
+                string input;
+                int cvv;
+                string expiryDate;
+                regex datePattern(R"(^(0[1-9]|1[0-2])/\d{4}$)");
+                string firstName;
+                string lastName;
+
+                // Collect and validate the user's first name
+                for (int i = 0; i < 3; i++) {
+                    cout << "Please enter your first name: ";
+                    cin >> firstName;
+
+                    if (!isAlphaWithSpace(firstName)) {
+                        cout << "Invalid first name input. Please use alphabetic characters with spaces." << endl;
+                        if (i == 2) {
+                            cout << "\033[31mYou have exceeded the maximum number of attempts. Exiting\033[0m" << endl;
+                            return 1; // Exit with an error code
+                        }
+                    } else {
+                        break;
+                    }
+                }
+
+                // Collect and validate the user's last name
+                for (int i = 0; i < 3; i++) {
+                    cout << "Please enter your last name: ";
+                    cin >> lastName;
+
+                    if (!isAlphaWithSpace(lastName)) {
+                        cout << "Invalid last name input. Please use alphabetic characters with spaces." << endl;
+                        if (i == 2) {
+                            cout << "\033[31mYou have exceeded the maximum number of attempts. Exiting\033[0m" << endl;
+                            return 1; // Exit with an error code
+                        }
+                    } else {
+                        break;
+                    }
+                }
+
+                // Collect and validate the credit card number
+                for (int i = 0; i < 3; i++) {
+                    cout << "Please enter your credit card number (16 digits): ";
+                    cin >> input;
+
+                    if (input.length() != 16 || !all_of(input.begin(), input.end(), ::isdigit)) {
+                        cout << "\033[31mInvalid input\033[0m" << endl << "Enter a valid 16-digit credit card number: " << endl;
+                        if (i == 2) {
+                            cout << "\033[31mYou have exceeded the maximum number of attempts. Exiting\033[0m" << endl;
+                            return 1; // Exit with an error code
+                        }
+                    } else {
+                        break;
+                    }
+                }
+
+                // Collect and validate the CVV (3-digit number)
+                for (int i = 0; i < 3; i++) {
+                    cout << "Please enter your 3-digit CVV number: ";
+                    cin >> cvv;
+
+                    if (cvv < 100 || cvv > 999) {
+                        cout << "Invalid CVV. It must be a 3-digit number." << endl;
+                        if (i == 2) {
+                            cout << "\033[31mYou have exceeded the maximum number of attempts. Exiting\033[0m" << endl;
+                            return 1; // Exit with an error code
+                        }
+                    } else {
+                        break;
+                    }
+                }
+
+                // Collect and validate the expiry date (mm/yyyy format)
+                for (int i = 0; i < 3; i++) {
+                    cout << "Please enter your card's expiry date (mm/yyyy): ";
+                    cin >> expiryDate;
+
+                    if (!regex_match(expiryDate, datePattern)) {
+                        cout << "Invalid expiry date. Please use the format 'mm/yyyy'." << endl;
+                        if (i == 2) {
+                            cout << "\033[31mYou have exceeded the maximum number of attempts. Exiting\033[0m" << endl;
+                            return 1; // Exit with an error code
+                        }
+                    } else {
+                        break;
+                    }
+                }
+
+                
+                // Check if the random number is less than 1 (10% chance)
+                if (randomValue < 1) {
+                    cout << "\033[31mPayment Failed!\033[0m" << endl;
+                    cout << "\033[31mContact support\033[0m" << endl;
+
+                    // Update available quantities
+                    for (auto item : cart) {
+                        for (auto &product : inventory) {
+                            if (product.name == item.first.name) {
+                                product.availableQuantity += item.second;
+                                break;
+                            }
+                        }
+                    }
+                } 
+                else {
                     cout << "Payment successful! Your order has been placed." << endl << endl;
-                    
-                    // // Update available quantities
-                    // for (auto item : cart) {
-                    //     for (auto &product : inventory) {
-                    //         if (product.name == item.first.name) {
-                    //             product.availableQuantity -= item.second;
-                    //             break;
-                    //         }
-                    //     }
-                    // }
                     cart.clear(); // Clear the cart after successful payment
 
                     // Ask the user if they want to place another order or exit
@@ -122,11 +212,8 @@ int main() {
                         cout << endl << "Thank you for shopping. Goodbye!" << endl << endl << endl;
                         return 0;
                     }
-                } else {
-                    cout << "Payment failed. Please try again." << endl << endl;
                 }
             }
-
         } 
 
         else if (choice == -2) {
