@@ -24,6 +24,39 @@ bool isAlphaWithSpace(const string &str) {
     return true;
 }
 
+bool isDigit(const string &str) {
+    for (char ch : str) {
+        if (!isdigit(ch)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+class InsufficientStockException : public std::exception {
+public:
+    InsufficientStockException() {}
+    const char* what() const noexcept override {
+        return "Insufficient Stock. Contact Support";
+    }
+};
+
+class PaymentFailureException : public std::exception {
+public:
+    virtual const char* what() const noexcept override {
+        return "Payment Failured. Contact Support";
+    }
+};
+
+class InvalidInputException : public exception {
+public:
+    const char* what() const noexcept override {
+        return "Invalid choice. Please try again.";
+    }
+};
+
+
+
 int main() {
     // Create a list of products
     vector<Product> inventory = {
@@ -54,17 +87,43 @@ int main() {
         }
         cout << "------------------------------------------------------" << endl;
 
-        int choice, option;
-        if (cartSize == 0) {
-            cout << endl << "Enter the ID of the product to add to cart: ";
-        }
-        else {
-            cout << endl << "Enter the ID of the product to add to cart: ";
-            cout << endl << "Enter -1 remove a product from cart or 0 to checkout): ";
-        }
+        int option;
+        int flag = 1;
+        string choicestr;
+        int choice;
+        
 
-        cin >> choice;
-        choice -= 1;        
+        while (flag == 1) {
+            if (cartSize == 0) {
+            cout << endl << "Enter the ID of the product to add to cart: ";
+            }
+            else {
+                cout << endl << "Enter the ID of the product to add to cart: ";
+                cout << endl << "Enter -1 remove a product from cart or 0 to checkout: ";
+            }
+
+            cin >> choicestr;
+            if (choicestr == "-1") {
+                choice = -2;
+                flag = 0;
+            } 
+            else if (choicestr == "0") {
+                cout << "InvalidInputException: Invalid choice. Please try again." << endl << endl;
+            }
+            else {
+                try {
+                    if (!isDigit(choicestr)) {
+                        throw InvalidInputException();
+                    } else {
+                        choice = stoi(choicestr) - 1;
+                        flag = 0;
+                    }
+                } catch (const InvalidInputException& e) {
+                    cout << "InvalidInputException: " << e.what() << endl;
+                }
+            }
+        }
+        
         
         if (choice == -1) {
             // Checkout process
@@ -98,8 +157,8 @@ int main() {
                 // Collecting credit card details
                 string input;
                 int cvv;
-                string expiryDate;
-                regex datePattern(R"(^(0[1-9]|1[0-2])/\d{4}$)");
+                string expiryDate, expiryYear;
+                const regex datePattern(R"(\d{2}/\d{4})");
                 string firstName;
                 string lastName;
 
@@ -119,7 +178,6 @@ int main() {
                     }
                 }
 
-                // Collect and validate the user's last name
                 for (int i = 0; i < 3; i++) {
                     cout << "Please enter your last name: ";
                     cin >> lastName;
@@ -135,7 +193,6 @@ int main() {
                     }
                 }
 
-                // Collect and validate the credit card number
                 for (int i = 0; i < 3; i++) {
                     cout << "Please enter your credit card number (16 digits): ";
                     cin >> input;
@@ -151,29 +208,12 @@ int main() {
                     }
                 }
 
-                // Collect and validate the CVV (3-digit number)
                 for (int i = 0; i < 3; i++) {
-                    cout << "Please enter your 3-digit CVV number: ";
-                    cin >> cvv;
-
-                    if (cvv < 100 || cvv > 999) {
-                        cout << "Invalid CVV. It must be a 3-digit number." << endl;
-                        if (i == 2) {
-                            cout << "\033[31mYou have exceeded the maximum number of attempts. Exiting\033[0m" << endl;
-                            return 1; // Exit with an error code
-                        }
-                    } else {
-                        break;
-                    }
-                }
-
-                // Collect and validate the expiry date (mm/yyyy format)
-                for (int i = 0; i < 3; i++) {
-                    cout << "Please enter your card's expiry date (mm/yyyy): ";
+                    cout << "Please enter your card's expiry date (mm/yyyy format): ";
                     cin >> expiryDate;
 
-                    if (!regex_match(expiryDate, datePattern)) {
-                        cout << "Invalid expiry date. Please use the format 'mm/yyyy'." << endl;
+                    if (!regex_match(expiryDate, datePattern) || expiryDate < "10/2023" || expiryDate > "12/2028") {
+                        cout << "Invalid expiry date. Please use the format 'mm/yyyy' within the range 01/2023 to 12/2028." << endl;
                         if (i == 2) {
                             cout << "\033[31mYou have exceeded the maximum number of attempts. Exiting\033[0m" << endl;
                             return 1; // Exit with an error code
@@ -185,34 +225,64 @@ int main() {
 
                 
                 // Check if the random number is less than 1 (10% chance)
-                if (randomValue < 1) {
-                    cout << "\033[31mPayment Failed!\033[0m" << endl;
-                    cout << "\033[31mContact support\033[0m" << endl;
+                // Uncomment below line to try payment failed
+                // randomValue = 0;
 
-                    // Update available quantities
-                    for (auto item : cart) {
-                        for (auto &product : inventory) {
-                            if (product.name == item.first.name) {
-                                product.availableQuantity += item.second;
-                                break;
+                int retry = 0;
+                while (retry < 3) {
+                    for (int i = 0; i < 3; i++) {
+                        cout << "Please enter your 3-digit CVV number: ";
+                        cin >> cvv;
+
+                        if (cvv < 100 || cvv > 999) {
+                            cout << "Invalid CVV. It must be a 3-digit number." << endl;
+                            if (i == 2) {
+                                cout << "\033[31mYou have exceeded the maximum number of attempts. Exiting\033[0m" << endl;
+                                return 1; // Exit with an error code
                             }
+                        } else {
+                            break;
                         }
                     }
-                } 
-                else {
-                    cout << "Payment successful! Your order has been placed." << endl << endl;
-                    cart.clear(); // Clear the cart after successful payment
+                    try {
+                        if (randomValue < 1) {
+                            throw PaymentFailureException();
 
-                    // Ask the user if they want to place another order or exit
-                    cout << endl << "Press 1 to place another order, or any other key to exit: ";
-                    int orderChoice;
-                    cin >> orderChoice;
-
-                    if (orderChoice != 1) {
-                        cout << endl << "Thank you for shopping. Goodbye!" << endl << endl << endl;
-                        return 0;
+                            // Update available quantities
+                            for (auto item : cart) {
+                                for (auto &product : inventory) {
+                                    if (product.name == item.first.name) {
+                                        product.availableQuantity += item.second;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    } catch (const PaymentFailureException& e) {
+                        cout << endl << "PaymentFailureException: " << e.what() << endl;
+                        retry += 1;
+                        if (retry == 3) {
+                            cout << endl << "Retry exhausted for PaymentFailureException. Exiting!!" << endl;
+                            return 1;
+                        }
                     }
                 }
+                
+
+                // No changes to the "else" block
+                cout << "Payment successful! Your order has been placed." << endl << endl;
+                cart.clear(); // Clear the cart after successful payment
+
+                // Ask the user if they want to place another order or exit
+                cout << endl << "Press 1 to place another order, or any other key to exit: ";
+                int orderChoice;
+                cin >> orderChoice;
+
+                if (orderChoice != 1) {
+                    cout << endl << "Thank you for shopping. Goodbye!" << endl << endl << endl;
+                    return 0;
+                }
+
             }
         } 
 
@@ -277,21 +347,30 @@ int main() {
             cin >> quantity;
 
             // Validate quantity and availability
-            if (quantity <= 0) {
-                cout << "Item is out of stock" << endl << endl;
-            }
-            else if (quantity > inventory[choice].availableQuantity) {
-                cout << "There is only " << inventory[choice].availableQuantity << " quantity in stock." << endl << endl;
-            } else {
-                cart.push_back({inventory[choice], quantity});
-                cout << "Added to cart!" << endl << endl;
-                cartSize += 1;
 
-                // Updating the quantity after adding to cart
-                inventory[choice].availableQuantity = inventory[choice].availableQuantity - quantity;
+            if (quantity <= 0) {
+                cout << "InvalidInputException: Invalid choice. Please try again" << endl << endl;
+            } else {
+                try {
+                    if (quantity > inventory[choice].availableQuantity) {
+                        cout << "There is only " << (inventory[choice].availableQuantity) << " quantity in stock.";
+                        throw InsufficientStockException();
+                    } 
+                    else {
+                        cart.push_back({inventory[choice], quantity});
+                        cout << "Added to cart!" << endl << endl;
+                        cartSize += 1;
+
+                        // Updating the quantity after adding to cart
+                        inventory[choice].availableQuantity -= quantity;
+                    }
+                } catch (InsufficientStockException& e) {
+                    cout << endl << "InsufficientStockException: " << e.what() << endl << endl;
+                }
             }
+
         } else {
-            cout << "Invalid choice. Please try again." << endl << endl;
+            cout << "InvalidInputException: Invalid choice. Please try again." << endl << endl;
         }
     }
 
